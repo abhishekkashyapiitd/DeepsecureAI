@@ -204,23 +204,31 @@ export const uploadFile = async (userId: string, file: File) => {
   const filePath = `scans/${userId}/${Date.now()}.${fileExtension}`;
   const storageRef = ref(storage, filePath);
   
-  // Timeout for storage upload
+  // Timeout for storage upload - increased to 60s
   const timeoutPromise = new Promise((_, reject) => 
-    setTimeout(() => reject(new Error("Storage upload timed out")), 30000)
+    setTimeout(() => reject(new Error("Storage upload timed out after 60s")), 60000)
   );
 
   const uploadProcess = (async () => {
-    const snapshot = await uploadBytes(storageRef, file);
-    const downloadURL = await getDownloadURL(snapshot.ref);
-    return downloadURL;
+    try {
+      const snapshot = await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+      return downloadURL;
+    } catch (err: any) {
+      console.error("Firebase Storage uploadBytes/getDownloadURL failed:", err);
+      if (err.code === 'storage/unauthorized') {
+        throw new Error("Firebase Storage Permission Denied. Please ensure Storage rules allow uploads.");
+      }
+      throw err;
+    }
   })();
 
   try {
     return await Promise.race([uploadProcess, timeoutPromise]) as string;
   } catch (error: any) {
-    console.error("Storage upload failed or timed out. Ensure Firebase Storage is enabled in the console and security rules allow access.", error);
-    if (error.code === 'storage/retry-limit-exceeded' || error.message === "Storage upload timed out") {
-      throw new Error("Firebase Storage is not responding. Please check if it's enabled in your Firebase console.");
+    console.error("Storage upload error:", error);
+    if (error.message.includes("timed out")) {
+      throw new Error("Storage upload timed out. This often happens if the Firebase project hasn't initialized Storage or the network is slow.");
     }
     throw error;
   }

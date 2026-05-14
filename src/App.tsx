@@ -129,6 +129,7 @@ export default function App() {
   const [uploadedBase64, setUploadedBase64] = useState<string | null>(null);
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
   const [appSettings, setAppSettings] = useState<GlobalSettings | null>(null);
   const [isAdminLoading, setIsAdminLoading] = useState(false);
@@ -259,6 +260,7 @@ export default function App() {
     setIsAnalyzing(true);
     setView('analyze');
     setActiveResult(null);
+    setAnalysisError(null);
 
     const reader = new FileReader();
     reader.onerror = (e) => {
@@ -323,10 +325,9 @@ export default function App() {
         })();
       } catch (err: any) {
         console.error("Analysis failed:", err);
-        setIsAnalyzing(false); // Ensure we stop the spinner
+        setIsAnalyzing(false); 
         setActiveResult(null);
-        alert(`Analysis Error: ${err.message}`);
-        setView('dashboard');
+        setAnalysisError(err.message || "An unexpected error occurred during analysis.");
       }
     };
     reader.readAsDataURL(file);
@@ -795,6 +796,33 @@ export default function App() {
                         animate={{ width: '90%' }}
                         transition={{ duration: 5, ease: "easeInOut" }}
                       />
+                   </div>
+                </Card>
+              ) : analysisError ? (
+                <Card className="p-12 border-red-500/30 bg-red-500/5 text-center flex flex-col items-center">
+                   <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mb-6 border border-red-500/20">
+                      <AlertTriangle className="w-8 h-8 text-red-500" />
+                   </div>
+                   <h2 className="text-2xl font-bold text-white mb-2">Analysis Failed</h2>
+                   <p className="text-red-400 font-mono text-sm mb-8 max-w-md bg-black/40 p-4 rounded-lg border border-red-500/20 shadow-inner">
+                     {analysisError}
+                   </p>
+                   {(analysisError.includes("API key not valid") || analysisError.includes("GEMINI_API_KEY is missing")) && (
+                     <div className="mb-8 p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg text-left max-w-md">
+                        <p className="text-amber-500 text-xs font-bold mb-2 flex items-center gap-1 uppercase tracking-widest">
+                           <Info className="w-3 h-3" /> Action Required
+                        </p>
+                        <p className="text-gray-300 text-sm">
+                           The Gemini API key is missing or invalid. Please add a valid <b>GEMINI_API_KEY</b> to your <b>Settings &gt; Secrets</b> in AI Studio to enable analysis.
+                        </p>
+                     </div>
+                   )}
+                   <div className="flex gap-4">
+                      <Button onClick={() => setView('dashboard')}>Return to Dashboard</Button>
+                      <Button variant="outline" onClick={() => {
+                        const input = document.getElementById('file-upload') as HTMLInputElement;
+                        if (input) input.click();
+                      }}>Try Again</Button>
                    </div>
                 </Card>
               ) : activeResult ? (
