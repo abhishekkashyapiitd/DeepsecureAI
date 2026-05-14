@@ -1,0 +1,62 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Basic user information and subscription status.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "email": { "type": "string" },
+        "subscriptionTier": { "type": "string", "enum": ["free", "premium", "enterprise"] },
+        "scansRemaining": { "type": "number" },
+        "totalScans": { "type": "number" },
+        "isAdmin": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "email", "subscriptionTier"]
+    },
+    "GlobalSettings": {
+      "title": "Global Settings",
+      "description": "App-wide configuration settings.",
+      "type": "object",
+      "properties": {
+        "isMaintenanceMode": { "type": "boolean" },
+        "defaultFreeScans": { "type": "number" },
+        "allowPublicRegistrations": { "type": "boolean" }
+      },
+      "required": ["isMaintenanceMode", "defaultFreeScans"]
+    },
+    "DetectionRecord": {
+      "title": "Detection Record",
+      "description": "Details of a specific image analysis.",
+      "type": "object",
+      "properties": {
+        "recordId": { "type": "string" },
+        "userId": { "type": "string" },
+        "imageHash": { "type": "string" },
+        "fileName": { "type": "string" },
+        "decision": { "type": "string", "enum": ["REAL", "FORGED"] },
+        "confidence": { "type": "number" },
+        "localization": { "type": "string" },
+        "details": { "type": "string" },
+        "summary": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["recordId", "userId", "decision", "confidence", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/settings/{settingId}": {
+      "schema": "GlobalSettings",
+      "description": "Global application configuration."
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles and settings."
+    },
+    "/users/{userId}/records/{recordId}": {
+      "schema": "DetectionRecord",
+      "description": "Historical records of image analyses for a user."
+    }
+  }
+}

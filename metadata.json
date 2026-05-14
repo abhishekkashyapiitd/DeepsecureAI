@@ -1,0 +1,12 @@
+{
+  "name": "DeepsecureAI",
+  "description": "Production-grade image forgery and deepfake detection platform with pixel-level localization and AI-powered confidence reporting.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "Image Analysis",
+    "Forgery Detection",
+    "Security Auditing"
+  ]
+}
