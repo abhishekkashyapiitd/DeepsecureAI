@@ -3,6 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
+import cors from "cors";
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 
 dotenv.config();
@@ -14,29 +15,39 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
+  app.use(cors()); // Enable CORS for all routes
+  
   // Request logging middleware
   app.use((req, res, next) => {
-    console.log(`[Server] ${req.method} ${req.url}`);
+    const timestamp = new Date().toISOString();
+    console.log(`[${timestamp}] [Server] ${req.method} ${req.url} - Headers: ${JSON.stringify(req.headers)}`);
     next();
   });
 
   // Increase limit for image uploads
-  app.use(express.json({ limit: '20mb' }));
+  app.use(express.json({ limit: '50mb' })); // Increased to 50MB for very large forensics images
 
   // API Health Check
   app.get("/api/health", (req, res) => {
-    res.json({ status: "ok" });
+    console.log("[Server] Health check requested");
+    res.json({ 
+      status: "ok", 
+      env: process.env.NODE_ENV,
+      time: new Date().toISOString(),
+      routes: ["/api/health", "/api/analyze"]
+    });
   });
 
   // AI Analysis Endpoint
   app.post("/api/analyze", async (req, res) => {
-    console.log("[Server] Received analysis request");
+    console.log("[Server] Received POST /api/analyze");
     const { base64Image } = req.body;
     
     if (!base64Image) {
-      console.error("[Server] Missing base64Image");
+      console.error("[Server] Bad Request: Missing base64Image");
       return res.status(400).json({ error: "Missing base64Image in request body" });
     }
+    console.log(`[Server] Image received (length: ${base64Image.length})`);
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
