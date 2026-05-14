@@ -15,8 +15,9 @@ export async function analyzeImage(base64Image: string): Promise<AnalysisResult>
   const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
 
   try {
-    console.log("Starting image analysis request to server...");
-    const response = await fetch("/api/analyze", {
+    const fetchUrl = "/api/analyze";
+    console.log(`Starting image analysis request to: ${window.location.origin}${fetchUrl}`);
+    const response = await fetch(fetchUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -32,7 +33,11 @@ export async function analyzeImage(base64Image: string): Promise<AnalysisResult>
       try {
         errorData = await response.json();
       } catch (e) {
-        errorData = { error: `Server error: ${response.status} ${response.statusText}` };
+        if (response.status === 404) {
+          errorData = { error: "Analysis API not found (404). This usually means the backend server is not running or the route is not configured correctly." };
+        } else {
+          errorData = { error: `Server error: ${response.status} ${response.statusText}` };
+        }
       }
       throw new Error(errorData.error || `Server error: ${response.status}`);
     }
